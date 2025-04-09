@@ -37,6 +37,7 @@ export function FilterDrawer({ filters, onFilterChange, disabled, onClose }: Fil
     return () => clearTimeout(timer)
   }, [searchInput])
 
+  //new test
   // Apply search filter when debounced value changes
   useEffect(() => {
     if (debouncedSearch !== filters.search) {

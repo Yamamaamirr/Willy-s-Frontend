@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Input } from "./ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Button } from "./ui/button"
 import { Search, SlidersHorizontal, RotateCcw, X } from "lucide-react"
 import type { VehicleStatus } from "@/lib/mock-data"
 import { Badge } from "./ui/badge"
-
 interface FilterDrawerProps {
   filters: {
     status: VehicleStatus | ""
@@ -21,60 +20,57 @@ interface FilterDrawerProps {
     search: string
   }) => void
   disabled: boolean
-  onClose: () => void
 }
 
-export function FilterDrawer({ filters, onFilterChange, disabled, onClose }: FilterDrawerProps) {
+export function FilterDrawer({ filters, onFilterChange, disabled }: FilterDrawerProps) {
   const [searchInput, setSearchInput] = useState(filters.search)
-  const [debouncedSearch, setDebouncedSearch] = useState(filters.search)
 
-  // Apply search filter with debounce
+  // Apply search filter with minimal debounce (150ms)
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput)
-    }, 300)
+      if (searchInput !== filters.search) {
+        onFilterChange({
+          ...filters,
+          search: searchInput,
+        })
+      }
+    }, 150)
 
     return () => clearTimeout(timer)
-  }, [searchInput])
+  }, [searchInput, filters, onFilterChange])
 
-  //new test
-  // Apply search filter when debounced value changes
-  useEffect(() => {
-    if (debouncedSearch !== filters.search) {
+  const handleStatusChange = useCallback(
+    (value: string) => {
       onFilterChange({
         ...filters,
-        search: debouncedSearch,
+        status: value as VehicleStatus | "",
       })
-    }
-  }, [debouncedSearch, filters, onFilterChange])
+    },
+    [filters, onFilterChange],
+  )
 
-  const handleStatusChange = (value: string) => {
-    onFilterChange({
-      ...filters,
-      status: value as VehicleStatus | "",
-    })
-  }
+  const handleRegionChange = useCallback(
+    (value: string) => {
+      onFilterChange({
+        ...filters,
+        region: value,
+      })
+    },
+    [filters, onFilterChange],
+  )
 
-  const handleRegionChange = (value: string) => {
-    onFilterChange({
-      ...filters,
-      region: value,
-    })
-  }
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value)
-  }
+  }, [])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchInput("")
-    setDebouncedSearch("")
     onFilterChange({
       status: "",
       region: "",
       search: "",
     })
-  }
+  }, [onFilterChange])
 
   const regions = ["North", "South", "East", "West", "Central", "Downtown", "Suburbs"]
 
@@ -97,15 +93,6 @@ export function FilterDrawer({ filters, onFilterChange, disabled, onClose }: Fil
               {activeFilterCount} active
             </Badge>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden flex ml-auto h-8 w-8"  // Changed from 'hidden md:flex'
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close filters</span>
-          </Button>
         </div>
       </div>
 

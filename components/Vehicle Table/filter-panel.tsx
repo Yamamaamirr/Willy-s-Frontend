@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { Input } from "./ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { Button } from "./ui/button"
@@ -13,12 +12,12 @@ import { Badge } from "./ui/badge"
 
 interface FilterPanelProps {
   filters: {
-    status: VehicleStatus | ""
+    status: VehicleStatus | "all"
     region: string
     search: string
   }
   onFilterChange: (filters: {
-    status: VehicleStatus | ""
+    status: VehicleStatus | "all"
     region: string
     search: string
   }) => void
@@ -26,55 +25,67 @@ interface FilterPanelProps {
   onClose?: () => void
 }
 
-export function FilterPanel({ filters, onFilterChange, disabled, onClose = () => {} }: FilterPanelProps) { 
-   const [searchInput, setSearchInput] = useState(filters.search)
-  const [isExpanded, setIsExpanded] = useState(false)
+export function FilterPanel({ filters, onFilterChange, disabled, onClose = () => {} }: FilterPanelProps) {
+  // Memoize regions to prevent recreation on every render
+  const regions = useMemo(() => ["North", "South", "East", "West", "Central", "Downtown", "Suburbs"], [])
+  
+  const [searchInput, setSearchInput] = useState(filters.search)
+  const [isExpanded] = useState(false) // Removed unused setter
 
-  const handleStatusChange = (value: string) => {
+  // Memoize handlers to prevent unnecessary recreations
+  const handleStatusChange = useCallback((value: string) => {
     onFilterChange({
       ...filters,
-      status: value as VehicleStatus | "",
+      status: value as VehicleStatus | "all",
     })
-  }
+  }, [filters, onFilterChange])
 
-  const handleRegionChange = (value: string) => {
+  const handleRegionChange = useCallback((value: string) => {
     onFilterChange({
       ...filters,
       region: value,
     })
-  }
+  }, [filters, onFilterChange])
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value)
-  }
+  }, [])
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     onFilterChange({
       ...filters,
       search: searchInput,
     })
-  }
+  }, [filters, onFilterChange, searchInput])
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setSearchInput("")
     onFilterChange({
-      status: "",
-      region: "",
+      status: "all",
+      region: "all",
       search: "",
     })
-  }
+  }, [onFilterChange])
 
-  const regions = ["North", "South", "East", "West", "Central", "Downtown", "Suburbs"]
+  // Memoize derived values
+  const hasActiveFilters = useMemo(() => 
+    filters.status !== "all" || filters.region !== "all" || filters.search !== "",
+    [filters]
+  )
 
-  const hasActiveFilters = filters.status !== "" || filters.region !== "" || filters.search !== ""
-  const activeFilterCount = [filters.status, filters.region, filters.search].filter(Boolean).length
+  const activeFilterCount = useMemo(() => 
+    [filters.status !== "all" ? filters.status : null, 
+     filters.region !== "all" ? filters.region : null, 
+     filters.search].filter(Boolean).length,
+    [filters]
+  )
 
   return (
     <Card className="border shadow-sm overflow-hidden">
       <CardContent className="p-0">
         <div className="md:hidden">
-          <Accordion type="single" collapsible>
+          <Accordion type="single" collapsible value={isExpanded ? "filters" : undefined}>
             <AccordionItem value="filters" className="border-b-0">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
                 <div className="flex items-center gap-2">
@@ -97,7 +108,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                       value={filters.status}
                       onValueChange={handleStatusChange}
                       disabled={disabled}
-                      data-testid="status-filter"
                     >
                       <SelectTrigger id="mobile-status-filter" className="w-full">
                         <SelectValue placeholder="All Statuses" />
@@ -120,7 +130,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                       value={filters.region}
                       onValueChange={handleRegionChange}
                       disabled={disabled}
-                      data-testid="region-filter"
                     >
                       <SelectTrigger id="mobile-region-filter" className="w-full">
                         <SelectValue placeholder="All Regions" />
@@ -151,10 +160,9 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                           value={searchInput}
                           onChange={handleSearchChange}
                           disabled={disabled}
-                          data-testid="search-input"
                         />
                       </div>
-                      <Button type="submit" variant="default" disabled={disabled} data-testid="search-button">
+                      <Button type="submit" variant="default" disabled={disabled}>
                         Search
                       </Button>
                     </div>
@@ -167,7 +175,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                       onClick={handleClearFilters}
                       className="flex items-center gap-1 w-full mt-2"
                       disabled={disabled}
-                      data-testid="clear-filters"
                     >
                       <X className="h-4 w-4" />
                       Clear Filters
@@ -190,18 +197,15 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                 </Badge>
               )}
             </div>
-            {onClose && (
-  <Button
-    variant="ghost"
-    size="icon"
-    className="h-8 w-8"
-    onClick={onClose}
-    data-testid="close-filter-button"
-  >
-    <X className="h-4 w-4" />
-    <span className="sr-only">Close filters</span>
-  </Button>
-)}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close filters</span>
+            </Button>
           </div>
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1">
@@ -213,7 +217,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                   value={filters.status}
                   onValueChange={handleStatusChange}
                   disabled={disabled}
-                  data-testid="status-filter"
                 >
                   <SelectTrigger id="status-filter" className="w-full">
                     <SelectValue placeholder="All Statuses" />
@@ -236,7 +239,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                   value={filters.region}
                   onValueChange={handleRegionChange}
                   disabled={disabled}
-                  data-testid="region-filter"
                 >
                   <SelectTrigger id="region-filter" className="w-full">
                     <SelectValue placeholder="All Regions" />
@@ -267,11 +269,10 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                       value={searchInput}
                       onChange={handleSearchChange}
                       disabled={disabled}
-                      data-testid="search-input"
                     />
                   </div>
                 </div>
-                <Button type="submit" variant="default" disabled={disabled} data-testid="search-button">
+                <Button type="submit" variant="default" disabled={disabled}>
                   Search
                 </Button>
               </form>
@@ -285,7 +286,6 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
                   onClick={handleClearFilters}
                   className="flex items-center gap-1"
                   disabled={disabled}
-                  data-testid="clear-filters"
                 >
                   <X className="h-4 w-4" />
                   Clear Filters
@@ -298,5 +298,3 @@ export function FilterPanel({ filters, onFilterChange, disabled, onClose = () =>
     </Card>
   )
 }
-
-

@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { type Vehicle, type VehicleStatus, mockVehicles } from "@/lib/mock-data"
-import { Button } from "./ui/button"
+import { Button } from "../../../components/ui/button"
 import { Filter, RefreshCw } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "../../../components/ui/sheet"
 import { DashboardStats } from "./dashboard-stats"
-import { MainNav } from "./main-nav"
+import { MainNav } from "../../../components/Navbar/main-nav"
 import { ExportButton } from "./export-button"
 import { FilterDrawer } from "./filter-drawer"
 import { VehicleTable } from "./vehicle-table"
@@ -139,7 +139,6 @@ export default function VehicleMonitoringDashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <MainNav activeView={activeView} setActiveView={setActiveView} />
 
       <div className="flex-1 overflow-y-auto pt-14 md:pt-0">
         <div className="p-4 md:p-6 space-y-6">

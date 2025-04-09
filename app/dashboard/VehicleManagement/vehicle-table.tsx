@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table"
 import {
   AlertTriangle,
   AlertCircle,
@@ -13,12 +13,12 @@ import {
   Clock,
   Car,
 } from "lucide-react"
-import { Button } from "./ui/button"
-import { Skeleton } from "./ui/skeleton"
+import { Button } from "../../../components/ui/button"
+import { Skeleton } from "../../../components/ui/skeleton"
 import type { Vehicle } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-import { Card, CardContent } from "./ui/card"
-import { Badge } from "./ui/badge"
+import { Card, CardContent } from "../../../components/ui/card"
+import { Badge } from "../../../components/ui/badge"
 
 interface VehicleTableProps {
   vehicles: Vehicle[]

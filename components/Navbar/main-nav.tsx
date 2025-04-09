@@ -17,9 +17,9 @@ import {
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "./ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
+import { Button } from "../ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet"
 
 interface MainNavProps {
   activeView: "dashboard"

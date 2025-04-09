@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { Input } from "./ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Button } from "./ui/button"
+import { Input } from "../../../components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
+import { Button } from "../../../components/ui/button"
 import { Search, X, SlidersHorizontal } from "lucide-react"
 import type { VehicleStatus } from "@/lib/mock-data"
-import { Card, CardContent } from "./ui/card"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
-import { Badge } from "./ui/badge"
+import { Card, CardContent } from "../../../components/ui/card"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../components/ui/accordion"
+import { Badge } from "../../../components/ui/badge"
 
 interface FilterPanelProps {
   filters: {

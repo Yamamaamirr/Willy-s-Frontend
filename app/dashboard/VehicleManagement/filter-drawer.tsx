@@ -2,12 +2,12 @@
 
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
-import { Input } from "./ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { Button } from "./ui/button"
+import { Input } from "../../../components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
+import { Button } from "../../../components/ui/button"
 import { Search, SlidersHorizontal, RotateCcw, X } from "lucide-react"
 import type { VehicleStatus } from "@/lib/mock-data"
-import { Badge } from "./ui/badge"
+import { Badge } from "../../../components/ui/badge"
 interface FilterDrawerProps {
   filters: {
     status: VehicleStatus | ""

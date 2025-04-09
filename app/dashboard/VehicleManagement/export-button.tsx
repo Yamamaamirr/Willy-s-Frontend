@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "./ui/button"
+import { Button } from "../../../components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog"
-import { Checkbox } from "./ui/checkbox"
-import { Label } from "./ui/label"
+} from "../../../components/ui/dialog"
+import { Checkbox } from "../../../components/ui/checkbox"
+import { Label } from "../../../components/ui/label"
 import { Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Vehicle } from "@/lib/mock-data"

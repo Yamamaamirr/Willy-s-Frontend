@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { Card, CardContent } from "./ui/card"
+import { Card, CardContent } from "../../../components/ui/card"
 import { TrendingUp, Car, Clock, AlertTriangle, ArrowUpRight, ArrowDownRight } from "lucide-react"
-import { Progress } from "./ui/progress"
+import { Progress } from "../../../components/ui/progress"
 
 interface DashboardStatsProps {
   activeVehicles: number

@@ -1,34 +1,78 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import {
   LayoutDashboard,
   FileBarChart,
   Settings,
   Users,
-  Map,
   ChevronLeft,
   ChevronRight,
   Car,
   LogOut,
   Menu,
   X,
+  Fence,
+  UserCog,
+  Route,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "../ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet"
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
-interface MainNavProps {
-  activeView: "dashboard"
-  setActiveView: (view: "dashboard") => void
-}
-
-export function MainNav({ activeView, setActiveView }: MainNavProps) {
+export function MainNav() {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const pathname = usePathname()
+
+  // Navigation items configuration
+  const navItems = [
+    {
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-4 w-4" />,
+      label: "Dashboard",
+      match: (path: string | null) => path === "/dashboard"
+    },
+    {
+      href: "/dashboard/Geofence",
+      icon: <Fence className="h-4 w-4" />,
+      label: "Geofence",
+      match: (path: string | null) => path?.startsWith("/dashboard/Geofence")
+    },
+    {
+      href: "/dashboard/routes",
+      icon: <Route className="h-4 w-4" />,
+      label: "Routes",
+      match: (path: string | null) => path?.startsWith("/dashboard/routes")
+    },
+    {
+      href: "/dashboard/reports",
+      icon: <FileBarChart className="h-4 w-4" />,
+      label: "Reports",
+      match: (path: string | null) => path?.startsWith("/dashboard/reports")
+    },
+    {
+      href: "/dashboard/drivers",
+      icon: <UserCog className="h-4 w-4" />,
+      label: "Drivers",
+      match: (path: string | null) => path?.startsWith("/dashboard/drivers")
+    },
+    {
+      href: "/dashboard/users",
+      icon: <Users className="h-4 w-4" />,
+      label: "Users",
+      match: (path: string | null) => path?.startsWith("/dashboard/users")
+    },
+    {
+      href: "/dashboard/settings",
+      icon: <Settings className="h-4 w-4" />,
+      label: "Settings",
+      match: (path: string | null) => path?.startsWith("/dashboard/settings")
+    }
+  ]
 
   // Check screen size on mount and resize
   useEffect(() => {
@@ -38,13 +82,8 @@ export function MainNav({ activeView, setActiveView }: MainNavProps) {
       }
     }
 
-    // Initial check
     checkScreenSize()
-
-    // Add event listener
     window.addEventListener("resize", checkScreenSize)
-
-    // Cleanup
     return () => window.removeEventListener("resize", checkScreenSize)
   }, [])
 
@@ -81,32 +120,17 @@ export function MainNav({ activeView, setActiveView }: MainNavProps) {
           </div>
 
           <TooltipProvider delayDuration={0}>
-            <NavItem
-              icon={<LayoutDashboard className="h-4 w-4" />}
-              label="Dashboard"
-              isActive={activeView === "dashboard"}
-              onClick={() => setActiveView("dashboard")}
-              isCollapsed={isMobile ? false : isCollapsed}
-              setIsMobileOpen={setIsMobileOpen}
-            />
-
-            <NavItem
-              icon={<Map className="h-4 w-4" />}
-              label="Map View"
-              isActive={false}
-              onClick={() => {}}
-              isCollapsed={isMobile ? false : isCollapsed}
-              setIsMobileOpen={setIsMobileOpen}
-            />
-
-            <NavItem
-              icon={<FileBarChart className="h-4 w-4" />}
-              label="Reports"
-              isActive={false}
-              onClick={() => {}}
-              isCollapsed={isMobile ? false : isCollapsed}
-              setIsMobileOpen={setIsMobileOpen}
-            />
+            {navItems.slice(0, 5).map((item) => (
+              <NavItem
+                key={item.href}
+                icon={item.icon}
+                label={item.label}
+                isActive={item.match(pathname)}
+                isCollapsed={isMobile ? false : isCollapsed}
+                setIsMobileOpen={setIsMobileOpen}
+                href={item.href}
+              />
+            ))}
           </TooltipProvider>
         </div>
 
@@ -121,23 +145,17 @@ export function MainNav({ activeView, setActiveView }: MainNavProps) {
           </div>
 
           <TooltipProvider delayDuration={0}>
-            <NavItem
-              icon={<Users className="h-4 w-4" />}
-              label="Users"
-              isActive={false}
-              onClick={() => {}}
-              isCollapsed={isMobile ? false : isCollapsed}
-              setIsMobileOpen={setIsMobileOpen}
-            />
-
-            <NavItem
-              icon={<Settings className="h-4 w-4" />}
-              label="Settings"
-              isActive={false}
-              onClick={() => {}}
-              isCollapsed={isMobile ? false : isCollapsed}
-              setIsMobileOpen={setIsMobileOpen}
-            />
+            {navItems.slice(5).map((item) => (
+              <NavItem
+                key={item.href}
+                icon={item.icon}
+                label={item.label}
+                isActive={item.match(pathname)}
+                isCollapsed={isMobile ? false : isCollapsed}
+                setIsMobileOpen={setIsMobileOpen}
+                href={item.href}
+              />
+            ))}
           </TooltipProvider>
         </div>
       </div>
@@ -226,32 +244,30 @@ interface NavItemProps {
   icon: React.ReactNode
   label: string
   isActive: boolean
-  onClick: () => void
   isCollapsed: boolean
   setIsMobileOpen: (open: boolean) => void
+  href: string
 }
 
-function NavItem({ icon, label, isActive, onClick, isCollapsed, setIsMobileOpen }: NavItemProps) {
+function NavItem({ icon, label, isActive, isCollapsed, setIsMobileOpen, href }: NavItemProps) {
   const handleClick = () => {
-    onClick()
     setIsMobileOpen(false)
   }
 
-  const item = (
-    <button
-      onClick={handleClick}
+  const content = (
+    <div
       className={cn(
         "flex items-center gap-3 w-full px-2 py-2 text-sm rounded-lg transition-all duration-200",
         isActive
           ? "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 dark:from-blue-900/20 dark:to-indigo-900/20 dark:text-blue-400"
           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
-        isCollapsed && "justify-center"  // Add centered alignment when collapsed
+        isCollapsed && "justify-center"
       )}
     >
       <span
         className={cn(
           "transition-all duration-200",
-          isActive && "p-1 rounded-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white",  // Changed to p-1 and rounded-sm
+          isActive && "p-1 rounded-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white",
           isCollapsed && "mx-auto"
         )}
       >
@@ -260,7 +276,13 @@ function NavItem({ icon, label, isActive, onClick, isCollapsed, setIsMobileOpen 
       {!isCollapsed && (
         <span className="flex-1 text-left transition-opacity duration-200 ease-in-out text-xs">{label}</span>
       )}
-    </button>
+    </div>
+  )
+
+  const item = (
+    <Link href={href} onClick={handleClick} className="block">
+      {content}
+    </Link>
   )
 
   if (isCollapsed) {

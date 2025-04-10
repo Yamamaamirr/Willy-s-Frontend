@@ -1,127 +1,265 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+/* Specific thumbnails for each map style */
+.standard-thumbnail {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23e4e8f0'/%3E%3Cpath d='M0 0 L48 0 L48 48 L0 48 Z' fill='%23e4e8f0'/%3E%3Cpath d='M10 10 L38 10 L38 38 L10 38 Z' fill='%23d4dbe5'/%3E%3Cpath d='M15 15 L33 15 L33 33 L15 33 Z' fill='%23e9edf3'/%3E%3Cpath d='M0 20 L48 20' stroke='%23c0cad8' stroke-width='1'/%3E%3Cpath d='M20 0 L20 48' stroke='%23c0cad8' stroke-width='1'/%3E%3Cpath d='M10 25 L15 25' stroke='%23a4b2c8' stroke-width='2'/%3E%3Cpath d='M25 33 L25 38' stroke='%23a4b2c8' stroke-width='2'/%3E%3Cpath d='M33 25 L38 25' stroke='%23a4b2c8' stroke-width='2'/%3E%3Cpath d='M25 10 L25 15' stroke='%23a4b2c8' stroke-width='2'/%3E%3C/svg%3E");
+}
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+.satellite-thumbnail {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23143622'/%3E%3Cpath d='M0 0 L48 0 L48 48 L0 48 Z' fill='%23143622'/%3E%3Cpath d='M10 10 L38 10 L38 38 L10 38 Z' fill='%230f2b1b'/%3E%3Cpath d='M15 15 L33 15 L33 33 L15 33 Z' fill='%23143622'/%3E%3Cpath d='M0 20 L48 20' stroke='%230a1f13' stroke-width='1'/%3E%3Cpath d='M20 0 L20 48' stroke='%230a1f13' stroke-width='1'/%3E%3Cpath d='M10 25 L15 25' stroke='%23184a2e' stroke-width='2'/%3E%3Cpath d='M25 33 L25 38' stroke='%23184a2e' stroke-width='2'/%3E%3Cpath d='M33 25 L38 25' stroke='%23184a2e' stroke-width='2'/%3E%3Cpath d='M25 10 L25 15' stroke='%23184a2e' stroke-width='2'/%3E%3C/svg%3E");
+}
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+.light-thumbnail {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%23ffffff'/%3E%3Cpath d='M0 0 L48 0 L48 48 L0 48 Z' fill='%23ffffff'/%3E%3Cpath d='M10 10 L38 10 L38 38 L10 38 Z' fill='%23f5f5f5'/%3E%3Cpath d='M15 15 L33 15 L33 33 L15 33 Z' fill='%23ffffff'/%3E%3Cpath d='M0 20 L48 20' stroke='%23e0e0e0' stroke-width='1'/%3E%3Cpath d='M20 0 L20 48' stroke='%23e0e0e0' stroke-width='1'/%3E%3Cpath d='M10 25 L15 25' stroke='%23d0d0d0' stroke-width='2'/%3E%3Cpath d='M25 33 L25 38' stroke='%23d0d0d0' stroke-width='2'/%3E%3Cpath d='M33 25 L38 25' stroke='%23d0d0d0' stroke-width='2'/%3E%3Cpath d='M25 10 L25 15' stroke='%23d0d0d0' stroke-width='2'/%3E%3C/svg%3E");
+}
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+.dark-thumbnail {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' fill='%231f2937'/%3E%3Cpath d='M0 0 L48 0 L48 48 L0 48 Z' fill='%231f2937'/%3E%3Cpath d='M10 10 L38 10 L38 38 L10 38 Z' fill='%23111827'/%3E%3Cpath d='M15 15 L33 15 L33 33 L15 33 Z' fill='%231f2937'/%3E%3Cpath d='M0 20 L48 20' stroke='%230d131f' stroke-width='1'/%3E%3Cpath d='M20 0 L20 48' stroke='%230d131f' stroke-width='1'/%3E%3Cpath d='M10 25 L15 25' stroke='%232d3748' stroke-width='2'/%3E%3Cpath d='M25 33 L25 38' stroke='%232d3748' stroke-width='2'/%3E%3Cpath d='M33 25 L38 25' stroke='%232d3748' stroke-width='2'/%3E%3Cpath d='M25 10 L25 15' stroke='%232d3748' stroke-width='2'/%3E%3C/svg%3E");
+}
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .map-option {
+    margin: 1px;
+    min-width: 36px;
+    padding: 4px 2px;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+  .map-thumbnail {
+    width: 32px;
+    height: 32px;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* Leaflet specific styles */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
 }
 
-/* Add animation for the error popup */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) translateX(-50%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateX(-50%);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Improve the appearance of mapbox controls */
-.mapboxgl-ctrl-group {
-  overflow: hidden;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
-  border-radius: 4px !important;
+.leaflet-control-layers,
+.leaflet-bar {
   border: none !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1) !important;
 }
 
-.mapboxgl-ctrl-group button {
+.leaflet-touch .leaflet-bar a {
   width: 30px;
   height: 30px;
+  line-height: 30px;
 }
 
-/* Remove focus outlines from mapbox controls */
-.mapboxgl-ctrl button:focus {
-  outline: none !important;
-  box-shadow: none !important;
+.leaflet-draw-toolbar a {
+  background-image: url("https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png");
+  background-repeat: no-repeat;
 }
 
-/* Drawing tools container styling */
-.drawing-tools-container .mapbox-gl-draw_ctrl-group {
-  margin: 0 !important;
-  box-shadow: none !important;
+.leaflet-draw-toolbar a.leaflet-draw-draw-polyline {
+  background-position: -2px -2px;
 }
 
-.drawing-tools-container {
-  animation: fadeIn 0.3s ease-out;
+.leaflet-draw-toolbar a.leaflet-draw-draw-polygon {
+  background-position: -31px -2px;
 }
 
-/* Make sure drawing tools are displayed horizontally */
-.mapbox-gl-draw_ctrl-group {
+.leaflet-draw-toolbar a.leaflet-draw-draw-rectangle {
+  background-position: -62px -2px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-draw-circle {
+  background-position: -92px -2px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-draw-marker {
+  background-position: -122px -2px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-edit-edit {
+  background-position: -152px -2px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-edit-remove {
+  background-position: -182px -2px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-edit-edit.leaflet-disabled {
+  background-position: -152px -32px;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-edit-remove.leaflet-disabled {
+  background-position: -182px -32px;
+}
+
+/* Ensure Leaflet controls have appropriate z-index */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 1000 !important;
+}
+
+.leaflet-pane {
+  z-index: 400 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 500 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 650 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 700 !important;
+}
+
+.leaflet-control {
+  z-index: 800 !important;
+}
+
+/* Reduce attribution size */
+.leaflet-control-attribution {
+  font-size: 8px !important;
+  padding: 2px 4px !important;
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  max-width: 200px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Custom slider styling with blue thumb */
+.slider-gray [role="slider"] {
+  @apply bg-primary border-0;
+}
+
+.slider-gray [data-orientation="horizontal"] {
+  @apply bg-gray-200;
+}
+
+/* Add colored track for the slider */
+.slider-gray [data-orientation="horizontal"] div {
+  @apply bg-primary/30;
+}
+
+/* Add custom styling for zoom controls with tooltips */
+.leaflet-control-zoom {
+  margin-top: 10px !important;
+  border: none !important;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-control-zoom a {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  color: #333 !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  background-color: white !important;
+  border-bottom: 1px solid #ccc !important;
   display: flex !important;
-  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f4f4f4 !important;
+  color: #253e6f !important;
+}
+
+.leaflet-control-zoom a:first-child {
+  border-top-left-radius: 4px !important;
+  border-top-right-radius: 4px !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom-left-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom-in {
+  font-size: 18px !important;
+}
+
+.leaflet-control-zoom-out {
+  font-size: 20px !important;
+}
+
+/* Fix for zoom controls to ensure they're visible */
+.leaflet-control-zoom a:before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+.leaflet-control-zoom-in:before {
+  content: "+" !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.leaflet-control-zoom-out:before {
+  content: "−" !important; /* This is an en dash, not a hyphen */
+  font-size: 18px !important;
+  font-weight: bold !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Add styles for selected geometries */
+.leaflet-editing-icon {
+  border-radius: 50%;
+  background-color: white;
+  border: 2px solid #253e6f;
+}
+
+.leaflet-draw-tooltip {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Style for selected shapes */
+.leaflet-selected-path {
+  animation: selectedPulse 1.5s infinite;
+}
+
+@keyframes selectedPulse {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 20;
+  }
+}
+
+/* Fix for command menu z-index */
+.cmd-menu {
+  z-index: 9999 !important;
+}
+
+/* Make command items clickable */
+[cmdk-item] {
+  cursor: pointer !important;
+}
+
+/* Ensure popover content appears above other elements */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
 }

@@ -28,7 +28,6 @@ export function MainNav() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const pathname = usePathname()
 
-  // Navigation items configuration
   const navItems = [
     {
       href: "/dashboard",
@@ -74,7 +73,6 @@ export function MainNav() {
     }
   ]
 
-  // Check screen size on mount and resize
   useEffect(() => {
     const checkScreenSize = () => {
       if (window.innerWidth < 768) {
@@ -212,7 +210,6 @@ export function MainNav() {
         <NavContent />
       </div>
 
-      {/* Mobile Navigation - Top Bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
@@ -280,7 +277,7 @@ function NavItem({ icon, label, isActive, isCollapsed, setIsMobileOpen, href }: 
   )
 
   const item = (
-    <Link href={href} onClick={handleClick} className="block">
+    <Link href={href} prefetch={true} onClick={handleClick} className="block">
       {content}
     </Link>
   )

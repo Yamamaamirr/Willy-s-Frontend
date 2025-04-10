@@ -9,6 +9,7 @@ const config = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  prefix: "",
   theme: {
     container: {
       center: true,
@@ -19,19 +20,38 @@ const config = {
     },
     extend: {
       colors: {
+        // Existing design tokens
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        // Extended primary with hardcoded and CSS var options
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#253e6f", // From new config
+          light: "#007AFF",
+          dark: "#003889",
           foreground: "hsl(var(--primary-foreground))",
+          var: "hsl(var(--primary))", // Optional alias if you want to use the old `--primary` token as well
         },
+
+        // Extended secondary
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "#D51C28",
+          light: "#EE0808",
+          dark: "#A50000",
           foreground: "hsl(var(--secondary-foreground))",
+          var: "hsl(var(--secondary))", // Optional alias
         },
+
+        // Additional colors
+        gray: {
+          DEFAULT: "#d4d4d4",
+        },
+        white: "#FFFFFF",
+
+        // Keep original tokens
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -53,11 +73,13 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -68,6 +90,7 @@ const config = {
           to: { height: "0" },
         },
       },
+
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",

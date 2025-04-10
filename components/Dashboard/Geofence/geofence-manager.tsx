@@ -9,7 +9,6 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import type { Feature } from "geojson"
 import { cn } from "@/lib/utils"
 
-
 // Define types for our geofence data
 export type GeofenceData = {
   name: string
@@ -33,9 +32,9 @@ export default function GeofenceManager() {
     alertType: "Both",
     categories: [],
     styleSettings: {
-      fillColor: "#3064ec",
+      fillColor: "#253e6f",
       fillOpacity: 0.3,
-      strokeColor: "#3064ec",
+      strokeColor: "#253e6f",
       strokeWidth: 2,
     },
     geojson: null,
@@ -119,7 +118,7 @@ export default function GeofenceManager() {
         <button
           onClick={toggleSidebar}
           className={cn(
-            "absolute top-1/2 transform -translate-y-1/2 z-20 bg-white rounded-l-md shadow-md p-1.5 transition-all duration-300 ease-in-out",
+            "absolute top-1/2 transform -translate-y-1/2 z-[2] bg-white rounded-l-md shadow-md p-1.5 transition-all duration-300 ease-in-out",
             sidebarOpen ? "right-[380px]" : "right-0",
             "focus:outline-none hover:bg-gray-50",
           )}
@@ -131,7 +130,7 @@ export default function GeofenceManager() {
         {/* Sidebar */}
         <div
           className={cn(
-            "absolute top-0 bottom-0 right-0 bg-white shadow-lg z-10 transition-transform duration-300 ease-in-out",
+            "absolute top-0 bottom-0 right-0 bg-gray-50 shadow-lg z-[2000] transition-transform duration-300 ease-in-out",
             isMobile ? "w-full" : "w-[380px]",
             sidebarOpen ? "translate-x-0" : isMobile ? "translate-x-full" : "translate-x-[380px]",
           )}
@@ -140,7 +139,7 @@ export default function GeofenceManager() {
           {isMobile && sidebarOpen && (
             <button
               onClick={toggleSidebar}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none z-20"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-gray hover:bg-gray/80 focus:outline-none z-[2100]"
               aria-label="Close sidebar"
             >
               <X size={18} className="text-gray-700" />

@@ -67,6 +67,7 @@ export default function GeofenceForm({
     }
 
     updateGeofenceData({ categories: currentCategories })
+    // Don't close the popover after selection to allow multiple selections
   }
 
   // Handle style settings changes
@@ -80,13 +81,12 @@ export default function GeofenceForm({
   }
 
   return (
-    <div className="p-5 h-full overflow-y-auto">
-      <h2 className="text-base font-medium text-[#111111] mb-4 pb-2 border-b border-[#f0f0f0]">
+    <div className="p-5 h-full overflow-y-auto bg-gray-50">
+      <h2 className="text-base font-medium text-[#111111] mb-4 pb-2 border-b border-[#d9d9d9]">
         Geofence Configuration
       </h2>
 
       <div className="space-y-5">
-        {/* Name Field */}
         <div>
           <Label htmlFor="name" className="text-xs font-medium text-[#111111] mb-1.5 block">
             Geofence Name
@@ -97,12 +97,12 @@ export default function GeofenceForm({
             value={geofenceData.name}
             onChange={handleNameChange}
             className={cn(
-              "text-xs border-[#d9d9d9] focus:border-[#3064ec] focus:ring-[#3064ec] h-8",
-              errors.name ? "border-red-500" : "",
+              "text-xs border-[#d9d9d9] focus:border-primary focus:ring-primary h-8",
+              errors.name ? "border-secondary" : "",
             )}
             aria-invalid={errors.name ? "true" : "false"}
           />
-          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          {errors.name && <p className="text-secondary text-xs mt-1">{errors.name}</p>}
           <p className="text-[#666666] text-xs mt-1">
             Format: ORG-{"{type}"}-{"{location}"}
           </p>
@@ -121,7 +121,7 @@ export default function GeofenceForm({
                 <RadioGroupItem
                   value="Entry"
                   id="entry"
-                  className="h-4 w-4 text-[#3064ec] border-[#d9d9d9] focus:ring-[#3064ec] focus:ring-offset-0"
+                  className="h-4 w-4 text-primary border-[#d9d9d9] focus:ring-primary focus:ring-offset-0"
                 />
               </div>
               <Label htmlFor="entry" className="cursor-pointer text-xs ml-1.5">
@@ -133,7 +133,7 @@ export default function GeofenceForm({
                 <RadioGroupItem
                   value="Exit"
                   id="exit"
-                  className="h-4 w-4 text-[#3064ec] border-[#d9d9d9] focus:ring-[#3064ec] focus:ring-offset-0"
+                  className="h-4 w-4 text-primary border-[#d9d9d9] focus:ring-primary focus:ring-offset-0"
                 />
               </div>
               <Label htmlFor="exit" className="cursor-pointer text-xs ml-1.5">
@@ -145,7 +145,7 @@ export default function GeofenceForm({
                 <RadioGroupItem
                   value="Both"
                   id="both"
-                  className="h-4 w-4 text-[#3064ec] border-[#d9d9d9] focus:ring-[#3064ec] focus:ring-offset-0"
+                  className="h-4 w-4 text-primary border-[#d9d9d9] focus:ring-primary focus:ring-offset-0"
                 />
               </div>
               <Label htmlFor="both" className="cursor-pointer text-xs ml-1.5">
@@ -155,59 +155,61 @@ export default function GeofenceForm({
           </RadioGroup>
         </div>
 
-        {/* Categories */}
-        <div>
+        {/* Categories - Fixed dropdown */}
+        <div className="z-50">
           <Label className="text-xs font-medium text-[#111111] mb-1.5 block">Category Tags</Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className={cn(
-                  "w-full justify-between border-[#d9d9d9] text-left font-normal text-xs h-8",
-                  errors.categories ? "border-red-500" : "",
-                )}
-                aria-invalid={errors.categories ? "true" : "false"}
-              >
-                {geofenceData.categories.length > 0
-                  ? `${geofenceData.categories.length} selected`
-                  : "Select categories..."}
-                <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0">
-              <Command>
-                <CommandInput placeholder="Search categories..." className="text-xs h-8" />
-                <CommandList>
-                  <CommandEmpty>No categories found.</CommandEmpty>
-                  <CommandGroup>
-                    {categoryOptions.map((category) => (
-                      <CommandItem
-                        key={category.value}
-                        value={category.value}
-                        onSelect={() => {
-                          toggleCategory(category.value)
-                        }}
-                        className="text-xs"
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-3 w-3",
-                            geofenceData.categories.includes(category.value)
-                              ? "opacity-100 text-[#3064ec]"
-                              : "opacity-0",
-                          )}
-                        />
-                        {category.label}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          {errors.categories && <p className="text-red-500 text-xs mt-1">{errors.categories}</p>}
+          <div className="relative">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between border-[#d9d9d9] text-left font-normal text-xs h-8",
+                    errors.categories ? "border-secondary" : "",
+                  )}
+                  aria-invalid={errors.categories ? "true" : "false"}
+                >
+                  {geofenceData.categories.length > 0
+                    ? `${geofenceData.categories.length} selected`
+                    : "Select categories..."}
+                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 z-[2100]" align="start">
+                <Command>
+                  <CommandInput placeholder="Search categories..." className="text-xs h-8" />
+                  <CommandList>
+                    <CommandEmpty>No categories found.</CommandEmpty>
+                    <CommandGroup>
+                      {categoryOptions.map((category) => (
+                        <CommandItem
+                          key={category.value}
+                          value={category.value}
+                          onSelect={() => toggleCategory(category.value)}
+                          className="text-xs cursor-pointer"
+                        >
+                          <div className="flex items-center w-full">
+                            <Check
+                              className={cn(
+                                "mr-2 h-3 w-3",
+                                geofenceData.categories.includes(category.value)
+                                  ? "opacity-100 text-primary"
+                                  : "opacity-0",
+                              )}
+                            />
+                            <span>{category.label}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          {errors.categories && <p className="text-secondary text-xs mt-1">{errors.categories}</p>}
 
           {geofenceData.categories.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
@@ -232,9 +234,9 @@ export default function GeofenceForm({
 
         {/* Style Settings Section */}
         <div className="pt-1">
-          <h3 className="text-xs font-medium text-[#111111] mb-3 pb-1 border-b border-[#f0f0f0]">Style Settings</h3>
+          <h3 className="text-xs font-medium text-[#111111] mb-3 pb-1 border-b border-[#d9d9d9]">Style Settings</h3>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Colors */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
@@ -316,8 +318,8 @@ export default function GeofenceForm({
         </div>
 
         {/* Coordinates & Area Section */}
-        <div className="pt-1">
-          <h3 className="text-xs font-medium text-[#111111] mb-3 pb-1 border-b border-[#f0f0f0]">Geometry Info</h3>
+        <div className="pt-2">
+          <h3 className="text-xs font-medium text-[#111111] mb-3 pb-1 border-b border-[#d9d9d9]">Geometry Info</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
@@ -334,14 +336,14 @@ export default function GeofenceForm({
             <div>
               <Label className="text-xs font-medium text-[#111111] mb-1.5 block">Area</Label>
               <div className="p-2 bg-[#f0f0f0] rounded-md font-mono text-[10px] h-8 flex items-center">
-                {area ? `${area.toFixed(2)} sq units` : <span className="text-[#666666]">Draw a shape</span>}
+                {area ? `${area.toFixed(2)} sq km` : <span className="text-[#666666]">Draw a shape</span>}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="pt-2">
-          <Button onClick={onSubmit} className="w-full bg-[#3064ec] hover:bg-[#2050c8] text-white h-9 text-sm">
+        <div className="pt-4">
+          <Button onClick={onSubmit} className="w-full bg-primary hover:bg-primary-dark text-white h-9 text-sm">
             Create Geofence
           </Button>
         </div>

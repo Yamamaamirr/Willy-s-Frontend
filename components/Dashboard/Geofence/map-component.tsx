@@ -1,110 +1,40 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
-import MapboxDraw from "@mapbox/mapbox-gl-draw"
+import dynamic from "next/dynamic"
 import type { GeofenceData } from "./geofence-manager"
-import "mapbox-gl/dist/mapbox-gl.css"
-import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css"
+import { useMobile } from "@/hooks/use-mobile"
+import { Map, ChevronDown } from "lucide-react"
+import "./geofence.css"
 
-
-
-mapboxgl.accessToken =
-  "pk.eyJ1IjoibXlhbWFtYWJlMjFpZ2lzIiwiYSI6ImNtM3l1Nzh3NzFteHAycXIwdWpmMjBuMHcifQ.TIPpkag1bufsT3FBntGq_A"
-
-// Custom circle mode for MapboxDraw
-const CircleMode = {
-  onSetup: function () {
-    const circle = {
-      type: "Feature",
-      properties: {
-        isCircle: true,
-        center: [],
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [[]],
-      },
-    }
-
-    this.updateUIClasses({ mouse: "add" })
-    this.setActionableState({
-      trash: true,
-    })
-
-    return {
-      circle,
-      currentVertexPosition: 0,
-    }
+// Define map styles
+const MAP_STYLES = {
+  standard: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    label: "Standard",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
-
-  onClick: function (state, e) {
-    // on first click, save center point
-    if (state.currentVertexPosition === 0) {
-      state.circle.properties.center = [e.lngLat.lng, e.lngLat.lat]
-      state.currentVertexPosition = 1
-      return
-    }
-
-    // on second click, calculate radius and generate circle
-    if (state.currentVertexPosition === 1) {
-      const center = state.circle.properties.center
-      const radius = Math.sqrt(Math.pow(e.lngLat.lng - center[0], 2) + Math.pow(e.lngLat.lat - center[1], 2))
-
-      // Generate circle polygon points
-      const steps = 64
-      const points = []
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * (2 * Math.PI)
-        const lng = center[0] + radius * Math.cos(angle)
-        const lat = center[1] + radius * Math.sin(angle)
-        points.push([lng, lat])
-      }
-      // Close the polygon
-      points.push(points[0])
-
-      state.circle.geometry.coordinates = [points]
-      state.circle.properties.radius = radius
-
-      this.updateUIClasses({ mouse: "pointer" })
-      this.changeMode("simple_select", { featureIds: [this.addFeature(state.circle)] })
-    }
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    label: "Satellite",
+    attribution:
+      "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
   },
-
-  onMouseMove: function (state, e) {
-    // Only update if we've already set the center point
-    if (state.currentVertexPosition === 1) {
-      const center = state.circle.properties.center
-      const radius = Math.sqrt(Math.pow(e.lngLat.lng - center[0], 2) + Math.pow(e.lngLat.lat - center[1], 2))
-
-      // Generate circle polygon points
-      const steps = 64
-      const points = []
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * (2 * Math.PI)
-        const lng = center[0] + radius * Math.cos(angle)
-        const lat = center[1] + radius * Math.sin(angle)
-        points.push([lng, lat])
-      }
-      // Close the polygon
-      points.push(points[0])
-
-      state.circle.geometry.coordinates = [points]
-      state.circle.properties.radius = radius
-
-      this.updateFeature(state.circle)
-    }
+  light: {
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    label: "Light",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
-
-  onTrash: function (state) {
-    this.deleteFeature([state.circle.id], { silent: true })
-    this.changeMode("simple_select")
-  },
-
-  toDisplayFeatures: (state, geojson, display) => {
-    display(geojson)
+  dark: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    label: "Dark",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
 }
+
+type MapStyleKey = keyof typeof MAP_STYLES
 
 interface MapComponentProps {
   updateGeofenceData: (data: Partial<GeofenceData>) => void
@@ -114,293 +44,442 @@ interface MapComponentProps {
   errors: Record<string, string>
 }
 
-export default function MapComponent({
-  updateGeofenceData,
-  styleSettings,
-  setCoordinates,
-  setArea,
-  errors,
-}: MapComponentProps) {
+// This is a placeholder component that will be rendered while the map is loading
+function MapPlaceholder() {
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-gray-100">
+      <div className="text-primary">Loading map...</div>
+    </div>
+  )
+}
+
+// The actual map component that will be dynamically loaded
+function MapComponentInner({ updateGeofenceData, styleSettings, setCoordinates, setArea, errors }: MapComponentProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
-  const draw = useRef<MapboxDraw | null>(null)
+  const mapRef = useRef<any>(null)
+  const tileLayerRef = useRef<any>(null)
+  const drawnItemsRef = useRef<any>(null)
+  const drawControlRef = useRef<any>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [showErrorPopup, setShowErrorPopup] = useState(false)
+  const [currentStyle, setCurrentStyle] = useState<MapStyleKey>("standard")
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+  const isMobile = useMobile()
+  const styleSettingsRef = useRef(styleSettings)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Initialize map
+  // Update ref when styleSettings change
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    styleSettingsRef.current = styleSettings
+  }, [styleSettings])
 
-    // Force the map container to have a height
-    if (mapContainer.current) {
-      mapContainer.current.style.height = "100%"
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowThemeDropdown(false)
+      }
     }
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12", // Changed to streets style for better visibility
-      center: [-74.5, 40],
-      zoom: 9,
-      attributionControl: false, // Hide attribution for cleaner look
-    })
-
-    // Add attribution in a more subtle way
-    map.current.addControl(
-      new mapboxgl.AttributionControl({
-        compact: true,
-      }),
-      "bottom-right",
-    )
-
-    // Add custom circle mode to MapboxDraw
-    // @ts-ignore - Custom modes are not in the type definitions
-    MapboxDraw.modes.draw_circle = CircleMode
-
-    // Initialize draw controls but don't display them
-    draw.current = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {
-        polygon: true,
-        line_string: true,
-        point: true,
-        trash: true,
-      },
-      // Add custom modes
-      modes: {
-        ...MapboxDraw.modes,
-        // @ts-ignore - Custom modes are not in the type definitions
-        draw_circle: CircleMode,
-      },
-      styles: [
-        // Style for the polygon fill
-        {
-          id: "gl-draw-polygon-fill",
-          type: "fill",
-          filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-          paint: {
-            "fill-color": styleSettings.fillColor,
-            "fill-outline-color": styleSettings.strokeColor,
-            "fill-opacity": styleSettings.fillOpacity,
-          },
-        },
-        // Style for the polygon outline
-        {
-          id: "gl-draw-polygon-stroke-active",
-          type: "line",
-          filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": styleSettings.strokeColor,
-            "line-width": styleSettings.strokeWidth,
-          },
-        },
-        // Style for the vertices
-        {
-          id: "gl-draw-point-point-stroke-active",
-          type: "circle",
-          filter: ["all", ["==", "$type", "Point"], ["==", "meta", "vertex"]],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#fff",
-            "circle-stroke-color": styleSettings.strokeColor,
-            "circle-stroke-width": 2,
-          },
-        },
-      ],
-    })
-
-    // Keep navigation controls in bottom right
-    map.current.addControl(
-      new mapboxgl.NavigationControl({
-        showCompass: false,
-      }),
-      "bottom-right",
-    )
-
-    // Add geolocate control to bottom right
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true,
-        },
-        trackUserLocation: true,
-      }),
-      "bottom-right",
-    )
-
-    map.current.on("load", () => {
-      setMapLoaded(true)
-
-      // Add draw control after map is loaded but hide the UI controls
-      if (map.current && draw.current) {
-        map.current.addControl(draw.current)
-
-        // Hide the drawing tools UI
-        const drawingTools = document.querySelector(".mapboxgl-ctrl-top-left .mapbox-gl-draw_ctrl-group")
-        if (drawingTools) {
-          ;(drawingTools as HTMLElement).style.display = "none"
-        }
-      }
-    })
-
-    // Clean up on unmount
+    document.addEventListener("mousedown", handleClickOutside)
     return () => {
-      if (map.current) {
-        map.current.remove()
-        map.current = null
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  // Initialize map when component mounts
+  useEffect(() => {
+    if (!mapContainer.current) return
+
+    // Create a script element for Leaflet
+    const leafletScript = document.createElement("script")
+    leafletScript.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    leafletScript.async = true
+
+    // Create a link element for Leaflet CSS
+    const leafletCss = document.createElement("link")
+    leafletCss.rel = "stylesheet"
+    leafletCss.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
+    // Add them to the document
+    document.head.appendChild(leafletCss)
+    document.body.appendChild(leafletScript)
+
+    // Wait for Leaflet to load
+    leafletScript.onload = () => {
+      // Now load Leaflet Draw
+      const drawScript = document.createElement("script")
+      drawScript.src = "https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"
+      drawScript.async = true
+
+      // Create a link element for Leaflet Draw CSS
+      const drawCss = document.createElement("link")
+      drawCss.rel = "stylesheet"
+      drawCss.href = "https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
+
+      // Add them to the document
+      document.head.appendChild(drawCss)
+      document.body.appendChild(drawScript)
+
+      // Wait for Leaflet Draw to load
+      drawScript.onload = () => {
+        // Initialize the map
+        initializeMap()
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      // Remove the scripts when component unmounts
+      if (document.body.contains(leafletScript)) {
+        document.body.removeChild(leafletScript)
+      }
+      // Clean up the map if it exists
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        tileLayerRef.current = null
+        drawnItemsRef.current = null
+        drawControlRef.current = null
       }
     }
   }, [])
 
-  // Update map styles when styleSettings change
-  useEffect(() => {
-    if (!mapLoaded || !draw.current || !map.current) return
+  // Add this function to initialize the map with a custom attribution control
+  const initializeMap = () => {
+    if (!mapContainer.current || !(window as any).L) return
 
-    // Since MapboxDraw doesn't have a direct method to update styles after initialization,
-    // we need to remove the existing draw control and add a new one with updated styles
+    const L = (window as any).L
 
-    // First, get the current features to preserve them
-    const currentFeatures = draw.current.getAll()
-
-    // Remove the existing draw control
-    map.current.removeControl(draw.current)
-
-    // Create a new draw control with updated styles
-    draw.current = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {
-        polygon: true,
-        line_string: true,
-        point: true,
-        trash: true,
-      },
-      // Add custom modes
-      modes: {
-        ...MapboxDraw.modes,
-        // @ts-ignore - Custom modes are not in the type definitions
-        draw_circle: CircleMode,
-      },
-      styles: [
-        // Style for the polygon fill
-        {
-          id: "gl-draw-polygon-fill",
-          type: "fill",
-          filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-          paint: {
-            "fill-color": styleSettings.fillColor,
-            "fill-outline-color": styleSettings.strokeColor,
-            "fill-opacity": styleSettings.fillOpacity,
-          },
-        },
-        // Style for the polygon outline
-        {
-          id: "gl-draw-polygon-stroke-active",
-          type: "line",
-          filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": styleSettings.strokeColor,
-            "line-width": styleSettings.strokeWidth,
-          },
-        },
-        // Style for the vertices
-        {
-          id: "gl-draw-point-point-stroke-active",
-          type: "circle",
-          filter: ["all", ["==", "$type", "Point"], ["==", "meta", "vertex"]],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#fff",
-            "circle-stroke-color": styleSettings.strokeColor,
-            "circle-stroke-width": 2,
-          },
-        },
-      ],
+    // Fix Leaflet icon issues
+    delete (L.Icon.Default.prototype as any)._getIconUrl
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
+      iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
+      shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
     })
 
-    // Add the new draw control
-    map.current.addControl(draw.current)
+    const map = L.map(mapContainer.current, {
+      attributionControl: false,
+      zoomControl: false, 
+    }).setView([40, -74.5], 9)
+    mapRef.current = map
 
-    // Hide the drawing tools UI
-    const drawingTools = document.querySelector(".mapboxgl-ctrl-top-left .mapbox-gl-draw_ctrl-group")
-    if (drawingTools) {
-      ;(drawingTools as HTMLElement).style.display = "none"
-    }
+    L.control
+      .attribution({
+        position: "bottomright",
+        prefix: "",
+      })
+      .addTo(map)
 
-    // Restore the features
-    if (currentFeatures.features.length > 0) {
-      draw.current.add(currentFeatures)
-    }
-  }, [styleSettings, mapLoaded])
+    const zoomControl = L.control
+      .zoom({
+        position: "topleft",
+        zoomInTitle: "Zoom in",
+        zoomOutTitle: "Zoom out",
+      })
+      .addTo(map)
 
-  // Handle draw events
-  useEffect(() => {
-    if (!mapLoaded || !map.current || !draw.current) return
+    const tileLayer = L.tileLayer(MAP_STYLES.standard.url, {
+      attribution: MAP_STYLES.standard.attribution,
+      maxZoom: 19,
+    }).addTo(map)
+    tileLayerRef.current = tileLayer
 
-    // Calculate area of a polygon
-    const calculateArea = (coordinates: number[][][]) => {
-      // Simple calculation for demo purposes
-      // In a real app, you'd use turf.js or a similar library for accurate calculations
+    const calculateArea = (layer: any) => {
       let area = 0
-      if (coordinates && coordinates[0] && coordinates[0].length > 2) {
-        // Very basic polygon area calculation
-        const vertices = coordinates[0]
-        for (let i = 0; i < vertices.length - 1; i++) {
-          area += vertices[i][0] * vertices[i + 1][1] - vertices[i + 1][0] * vertices[i][1]
+      if (layer instanceof L.Polygon) {
+        const latLngs = layer.getLatLngs()[0]
+        let polygonArea = 0
+        for (let i = 0; i < latLngs.length; i++) {
+          const j = (i + 1) % latLngs.length
+          polygonArea += latLngs[i].lng * latLngs[j].lat
+          polygonArea -= latLngs[j].lng * latLngs[i].lat
         }
-        area = Math.abs(area) / 2
+        // Convert to square kilometers (approximate)
+        area = (Math.abs(polygonArea) * 111.32 * 111.32) / 2
       }
       return area
     }
 
-    // Update geojson data when a feature is created or updated
-    const updateGeojson = () => {
-      const features = draw.current?.getAll()
-      if (features && features.features.length > 0) {
-        const feature = features.features[0] // Just use the first feature for simplicity
-        updateGeofenceData({ geojson: feature })
+    const drawnItems = new L.FeatureGroup()
+    map.addLayer(drawnItems)
+    drawnItemsRef.current = drawnItems
 
-        // Calculate and update area
-        if (feature.geometry.type === "Polygon") {
-          const area = calculateArea(feature.geometry.coordinates as number[][][])
+    if (L.Control.Draw) {
+      const drawOptions = {
+        position: "topleft",
+        draw: {
+          polyline: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: "#e1e100",
+              message: "<strong>Error:</strong> Polygon edges cannot cross!",
+            },
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          circle: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          rectangle: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          marker: true,
+          circlemarker: false,
+        },
+        edit: {
+          featureGroup: drawnItems,
+          remove: true,
+          edit: {
+            selectedPathOptions: {
+              maintainColor: true,
+              dashArray: "10, 10",
+              fillOpacity: 0.5,
+            },
+          },
+        },
+      }
+
+      // Add draw control
+      const drawControl = new L.Control.Draw(drawOptions)
+      map.addControl(drawControl)
+      drawControlRef.current = drawControl
+
+      // Make all drawn items selectable and movable by default
+      map.on("draw:created", (e) => {
+        const layer = e.layer
+
+        // Make the layer draggable if it's a marker
+        if (layer instanceof L.Marker) {
+          layer.options.draggable = true
+        }
+
+        // Apply current style settings to the layer
+        if (layer.setStyle) {
+          layer.setStyle({
+            color: styleSettingsRef.current.strokeColor,
+            fillColor: styleSettingsRef.current.fillColor,
+            fillOpacity: styleSettingsRef.current.fillOpacity,
+            weight: styleSettingsRef.current.strokeWidth,
+          })
+        }
+
+        // Add the layer to drawnItems
+        drawnItems.addLayer(layer)
+
+        // Get all layers as GeoJSON
+        const allLayers: any[] = []
+        drawnItems.eachLayer((l: any) => {
+          allLayers.push(l.toGeoJSON())
+        })
+
+        // Create a feature collection
+        const featureCollection = {
+          type: "FeatureCollection",
+          features: allLayers,
+        }
+
+        // Update geojson data with the feature collection
+        updateGeofenceData({ geojson: featureCollection as any })
+
+        // Calculate and update area - use the last drawn shape for area display
+        const area = calculateArea(layer)
+        setArea(area)
+      })
+
+      // Add event listener for when shapes are edited (moved, vertices changed, etc.)
+      map.on("draw:edited", (e) => {
+        const layers = e.layers
+
+        // Get all layers as GeoJSON
+        const allLayers: any[] = []
+        drawnItems.eachLayer((l: any) => {
+          allLayers.push(l.toGeoJSON())
+        })
+
+        // Create a feature collection
+        const featureCollection = {
+          type: "FeatureCollection",
+          features: allLayers,
+        }
+
+        updateGeofenceData({ geojson: featureCollection as any })
+
+        if (layers && layers.getLayers().length > 0) {
+          const layer = layers.getLayers()[0]
+          const area = calculateArea(layer)
           setArea(area)
         }
-      } else {
-        updateGeofenceData({ geojson: null })
-        setArea(null)
-      }
+      })
+
+      map.on("draw:deleted", (e) => {
+        // Get all remaining layers as GeoJSON
+        const allLayers: any[] = []
+        drawnItems.eachLayer((l: any) => {
+          allLayers.push(l.toGeoJSON())
+        })
+
+        if (allLayers.length === 0) {
+          updateGeofenceData({ geojson: null })
+          setArea(null)
+        } else {
+          // Create a feature collection with remaining features
+          const featureCollection = {
+            type: "FeatureCollection",
+            features: allLayers,
+          }
+
+          // Update geojson data with the feature collection
+          updateGeofenceData({ geojson: featureCollection as any })
+
+          // Update area with the first remaining shape
+          if (drawnItems.getLayers().length > 0) {
+            const layer = drawnItems.getLayers()[0]
+            const area = calculateArea(layer)
+            setArea(area)
+          }
+        }
+      })
+    } else {
+      console.error("Leaflet Draw is not available")
     }
 
-    // Update coordinates on mouse move (but don't display them)
-    const updateCoordinates = (e: mapboxgl.MapMouseEvent) => {
-      const { lng, lat } = e.lngLat
-      const lngFormatted = Number.parseFloat(lng.toFixed(6))
+    // Update coordinates on mouse move
+    map.on("mousemove", (e: any) => {
+      const { lat, lng } = e.latlng
       const latFormatted = Number.parseFloat(lat.toFixed(6))
-      setCoordinates([lngFormatted, latFormatted])
+      const lngFormatted = Number.parseFloat(lng.toFixed(6))
+      setCoordinates([latFormatted, lngFormatted])
+    })
+
+    setMapLoaded(true)
+  }
+
+  // Function to change map style
+  const handleStyleChange = (styleKey: MapStyleKey) => {
+    if (!mapLoaded || !mapRef.current || !tileLayerRef.current) return
+
+    if (styleKey !== currentStyle) {
+      // Remove current tile layer
+      mapRef.current.removeLayer(tileLayerRef.current)
+
+      // Add new tile layer
+      const L = (window as any).L
+      const newTileLayer = L.tileLayer(MAP_STYLES[styleKey].url, {
+        attribution: MAP_STYLES[styleKey].attribution,
+        maxZoom: 19,
+      }).addTo(mapRef.current)
+
+      // Update tile layer reference
+      tileLayerRef.current = newTileLayer
+
+      // Update current style
+      setCurrentStyle(styleKey)
     }
 
-    // Event listeners
-    map.current.on("draw.create", updateGeojson)
-    map.current.on("draw.update", updateGeojson)
-    map.current.on("draw.delete", updateGeojson)
-    map.current.on("mousemove", updateCoordinates)
+    // Close the dropdown
+    setShowThemeDropdown(false)
+  }
 
-    return () => {
-      if (map.current) {
-        map.current.off("draw.create", updateGeojson)
-        map.current.off("draw.update", updateGeojson)
-        map.current.off("draw.delete", updateGeojson)
-        map.current.off("mousemove", updateCoordinates)
+  // Update styles when styleSettings change
+  useEffect(() => {
+    if (!mapLoaded || !drawnItemsRef.current) return
+
+    // Update styles for all drawn items
+    drawnItemsRef.current.eachLayer((layer: any) => {
+      if (layer.setStyle) {
+        layer.setStyle({
+          color: styleSettings.strokeColor,
+          fillColor: styleSettings.fillColor,
+          fillOpacity: styleSettings.fillOpacity,
+          weight: styleSettings.strokeWidth,
+        })
       }
-    }
-  }, [mapLoaded, updateGeofenceData, setCoordinates, setArea])
+    })
 
+    // Update draw control options if it exists
+    if (mapRef.current && drawControlRef.current) {
+      // Remove existing draw control
+      mapRef.current.removeControl(drawControlRef.current)
+
+      // Create new draw control with updated styles
+      const L = (window as any).L
+      const drawOptions = {
+        position: "topleft",
+        draw: {
+          polyline: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: "#e1e100",
+              message: "<strong>Error:</strong> Polygon edges cannot cross!",
+            },
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          circle: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          rectangle: {
+            shapeOptions: {
+              color: styleSettings.strokeColor,
+              fillColor: styleSettings.fillColor,
+              fillOpacity: styleSettings.fillOpacity,
+              weight: styleSettings.strokeWidth,
+            },
+          },
+          marker: true,
+          circlemarker: false,
+        },
+        edit: {
+          featureGroup: drawnItemsRef.current,
+          remove: true,
+        },
+      }
+
+      // Add new draw control
+      const drawControl = new L.Control.Draw(drawOptions)
+      mapRef.current.addControl(drawControl)
+      drawControlRef.current = drawControl
+    }
+  }, [styleSettings, mapLoaded])
+
+  // Show error popup when there's a geojson error
   useEffect(() => {
     if (errors.geojson) {
       setShowErrorPopup(true)
@@ -413,18 +492,57 @@ export default function MapComponent({
   }, [errors.geojson])
 
   return (
-    <div className="relative w-full h-full">
-      <div ref={mapContainer} className="absolute inset-0" style={{ height: "100%" }} />
+    <div className="relative w-full h-full" style={{ zIndex: 1 }}>
+      <div ref={mapContainer} className="absolute inset-0" style={{ height: "100%", zIndex: 1 }} />
+
+      {/* Modern dropdown theme selector - at bottom left with upward opening */}
+      <div className="absolute bottom-6 left-6 z-[1000]" ref={dropdownRef}>
+        <div className="relative">
+          <button
+            onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+            className={`flex items-center space-x-2 bg-white rounded-md shadow-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none border border-gray-200 ${
+              isMobile ? "scale-90 origin-bottom-left" : ""
+            }`}
+            title="Change map style"
+          >
+            <Map size={isMobile ? 12 : 14} className="text-primary" />
+            <span>{MAP_STYLES[currentStyle].label}</span>
+            <ChevronDown
+              size={isMobile ? 12 : 14}
+              className={`transition-transform ${showThemeDropdown ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showThemeDropdown && (
+            <div className="absolute bottom-full mb-1 left-0 bg-white rounded-md shadow-lg py-1 min-w-[140px] border border-gray-200">
+              {Object.entries(MAP_STYLES).map(([key, style]) => (
+                <button
+                  key={key}
+                  onClick={() => handleStyleChange(key as MapStyleKey)}
+                  className={`w-full text-left px-3 py-1.5 text-xs flex items-center space-x-2 hover:bg-gray-50 ${
+                    currentStyle === key ? "bg-gray-100 font-medium text-primary" : ""
+                  } ${isMobile ? "text-[10px]" : ""}`}
+                >
+                  <div className={`w-4 h-4 rounded-sm border ${key}-thumbnail`}></div>
+                  <span>{style.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {showErrorPopup && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-xs shadow-md animate-fadeIn">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1500] bg-secondary-light/10 border border-secondary text-secondary-dark px-4 py-2 rounded text-xs shadow-md animate:fadeIn">
           {errors.geojson}
         </div>
       )}
-      {/* Help tooltip */}
-      <div className="absolute top-4 left-4 z-10">
+
+      {/* Help tooltip - positioned above zoom controls */}
+      <div className="absolute top-4 left-14 z-[1500]" style={{ zIndex: 1 }}>
         <div className="relative group">
           <button
-            className="bg-[#3064ec] rounded-full w-5 h-5 flex items-center justify-center shadow-sm hover:bg-[#2050c8] focus:outline-none"
+            className="bg-primary rounded-full w-5 h-5 flex items-center justify-center shadow-sm hover:bg-primary-dark focus:outline-none"
             aria-label="Drawing help"
           >
             <svg
@@ -456,7 +574,7 @@ export default function MapComponent({
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-[#3064ec] mr-1"
+                className="text-primary mr-1"
               >
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -466,22 +584,34 @@ export default function MapComponent({
             </div>
             <ul className="space-y-1 text-[#666666]">
               <li className="flex items-start">
-                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-[#3064ec] text-white text-[8px]">
+                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-primary text-white text-[8px]">
                   1
                 </div>
-                <span>Use the sidebar to configure your geofence</span>
+                <span>Use the drawing tools on the left to create shapes</span>
               </li>
               <li className="flex items-start">
-                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-[#3064ec] text-white text-[8px]">
+                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-primary text-white text-[8px]">
                   2
                 </div>
-                <span>Navigation controls are in the bottom right</span>
+                <span>Change map style using the style selector</span>
               </li>
               <li className="flex items-start">
-                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-[#3064ec] text-white text-[8px]">
+                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-primary text-white text-[8px]">
                   3
                 </div>
-                <span>Use the location button to find your position</span>
+                <span>Configure your geofence in the sidebar</span>
+              </li>
+              <li className="flex items-start">
+                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-primary text-white text-[8px]">
+                  4
+                </div>
+                <span>Draw multiple shapes to create complex geofences</span>
+              </li>
+              <li className="flex items-start">
+                <div className="min-w-3 h-3 mr-1 flex items-center justify-center rounded-full bg-primary text-white text-[8px]">
+                  5
+                </div>
+                <span>Click the edit tool (pencil icon) to select and move shapes</span>
               </li>
             </ul>
           </div>
@@ -490,3 +620,9 @@ export default function MapComponent({
     </div>
   )
 }
+
+// Export a dynamic component that loads only on the client side
+export default dynamic(() => Promise.resolve(MapComponentInner), {
+  ssr: false,
+  loading: MapPlaceholder,
+})
